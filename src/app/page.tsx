@@ -10,6 +10,7 @@ export default function Home() {
   return (
     <div className="pages flex flex-col items-center justify-center min-h-screen p-6">
       <Image src="/reown.svg" alt="Reown" width={150} height={150} priority />
+      
 
       <h1 className="text-2xl font-bold mt-4 mb-6">
         AppKit Wagmi Next.js App Router Example
