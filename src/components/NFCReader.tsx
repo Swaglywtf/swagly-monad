@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // --- (Las definiciones de tipo que agregamos antes se mantienen igual) ---
 interface NDEFReadingEvent extends Event {
