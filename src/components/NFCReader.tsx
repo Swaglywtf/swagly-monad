@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// --- (Las definiciones de tipo que agregamos antes se mantienen igual) ---
+// --- (Las definiciones de tipo se mantienen igual) ---
 interface NDEFReadingEvent extends Event {
   serialNumber: string;
   message: NDEFMessage;
@@ -28,61 +28,107 @@ declare global {
   }
 }
 
-// --- Tu Componente Corregido ---
+// --- Componente con Lógica de Fallback Manual ---
 
 export default function NFCReader() {
   const [tag, setTag] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isNfcSupported, setIsNfcSupported] = useState<boolean>(true);
+  
+  // NUEVO: Estado para guardar la clave manual
+  const [manualKey, setManualKey] = useState<string>("");
 
-  // Función que se ejecuta al hacer clic en el botón
+  useEffect(() => {
+    // Comprobamos la compatibilidad una sola vez
+    if (!("NDEFReader" in window)) {
+      setIsNfcSupported(false);
+    }
+  }, []);
+
   const handleScanNFC = async () => {
-    // Reseteamos los estados antes de cada escaneo
     setTag(null);
     setError(null);
-
-    if ("NDEFReader" in window) {
-      try {
-        const reader = new window.NDEFReader();
-        await reader.scan();
-
-        reader.onreading = (event: NDEFReadingEvent) => {
-          const decoder = new TextDecoder();
-          for (const record of event.message.records) {
-            if (record.data) {
-              setTag(decoder.decode(record.data));
-            }
+    try {
+      const reader = new window.NDEFReader();
+      await reader.scan();
+      reader.onreading = (event: NDEFReadingEvent) => {
+        const decoder = new TextDecoder();
+        for (const record of event.message.records) {
+          if (record.data) {
+            setTag(decoder.decode(record.data));
           }
-        };
-
-      } catch (err: unknown) { // Usamos 'unknown' para mayor seguridad
-        if (err instanceof Error) {
-          setError("Error al iniciar NFC: " + err.message);
-        } else {
-          setError("Ocurrió un error desconocido.");
         }
+      };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Error al escanear: " + err.message);
+      } else {
+        setError("Ocurrió un error desconocido.");
       }
-    } else {
-      setError("⚠️ Web NFC no está soportado en este dispositivo/navegador.");
     }
   };
 
-  return (
-    <div className="p-4 border rounded-xl flex flex-col items-center gap-4">
-      <h2 className="text-lg font-bold">Demo NFC</h2>
-      
-      {/* Botón para iniciar el escaneo */}
-      <button 
-        onClick={handleScanNFC}
-        className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-      >
-        Escanear NFC
-      </button>
+  // NUEVO: Función para manejar el envío manual
+  const handleManualSubmit = () => {
+    if (manualKey.trim() === "") {
+      setError("Por favor, introduce una clave.");
+      return;
+    }
+    setError(null);
+    setTag(manualKey); // Usamos el mismo estado "tag" para mostrar el resultado
+    console.log("Clave manual enviada:", manualKey);
+  };
 
-      {error && <p className="text-red-500 text-center">{error}</p>}
-      
-      <p className="text-center">
-        {tag ? `✅ Detectado: ${tag}` : "Presiona el botón y acerca tu dispositivo al sticker"}
-      </p>
+  return (
+    <div className="p-4 border rounded-xl flex flex-col items-center gap-4 w-full max-w-sm">
+      <h2 className="text-lg font-bold">
+        {isNfcSupported ? "Verificación NFC" : "Verificación Manual"}
+      </h2>
+
+      {isNfcSupported ? (
+        // --- Interfaz para navegadores compatibles ---
+        <>
+          <button
+            onClick={handleScanNFC}
+            className="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+          >
+            Escanear NFC
+          </button>
+          <p className="text-center text-sm text-gray-500">
+            Presiona el botón y acerca tu dispositivo al sticker.
+          </p>
+        </>
+      ) : (
+        // --- Interfaz para navegadores NO compatibles ---
+        <>
+          <p className="text-center text-sm text-yellow-700 bg-yellow-50 p-2 rounded-md">
+            ⚠️ Tu navegador no es compatible con NFC. Por favor, introduce la clave manualmente.
+          </p>
+          <input
+            type="text"
+            value={manualKey}
+            onChange={(e) => setManualKey(e.target.value)}
+            placeholder="Escribe tu clave aquí..."
+            className="border rounded-md p-2 w-full text-center"
+          />
+          <button
+            onClick={handleManualSubmit}
+            className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition-colors"
+          >
+            Enviar Clave
+          </button>
+        </>
+      )}
+
+      {/* --- Área de Resultados (común para ambos métodos) --- */}
+      <div className="mt-4 text-center">
+        {error && <p className="text-red-500">{error}</p>}
+        {tag && (
+          <p className="text-green-600 font-bold text-lg">
+            ✅ Clave Procesada: {tag}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
