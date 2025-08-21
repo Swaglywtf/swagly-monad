@@ -9,14 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@privy-io/react-auth": "^2.21.4",
     "@reown/appkit": "1.7.17",
     "@reown/appkit-adapter-wagmi": "1.7.17",
     "@tanstack/react-query": "^5.59.20",
+    "@zerodev/ecdsa-validator": "^5.4.9",
+    "@zerodev/presets": "^5.3.3",
+    "@zerodev/sdk": "^5.4.41",
     "next": "15.3.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "viem": "^2.31.3",
-    "wagmi": "^2.12.31"
+    "viem": "^2.34.0",
+    "wagmi": "^2.16.4"
   },
   "devDependencies": {
     "@types/node": "^22",
